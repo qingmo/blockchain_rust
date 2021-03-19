@@ -1,5 +1,5 @@
 [package]
-name = "rblockchain"
+name = "blockchain_rust"
 version = "0.1.0"
 authors = ["chaos <eagleqingluo@gmail.com>"]
 edition = "2018"
