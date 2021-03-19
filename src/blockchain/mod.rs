@@ -1,4 +1,5 @@
 use crate::block::Block;
+use crate::proofofwork;
 
 #[derive(Debug)]
 pub struct Blockchain {
@@ -22,6 +23,7 @@ impl Blockchain {
         for (i, b) in self.blocks.iter().enumerate() {
             println!("index {}", i);
             println!("Prev. hash:{:?}", b.pretty_prev_hash());
+            println!("pow validate result:{:?}", proofofwork::validate(&b, proofofwork::DEFAULT_DIFFICULTY));
             println!("data:{:?}", b.pretty_data());
             println!("hash:{:?}", b.pretty_hash());
             println!();

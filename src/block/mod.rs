@@ -1,12 +1,9 @@
 use chrono::prelude::*;
-use crypto::digest::Digest;
-use crypto::sha2::Sha256;
 
-use crate::util;
+use crate::{util, Sha256Hash, proofofwork};
 
-const HASH_BYTE_SIZE: usize = 32;
-
-pub type Sha256Hash = [u8; HASH_BYTE_SIZE];
+pub const HASH_BYTE_SIZE: usize = 32;
+pub const HASH_BIT_SIZE: usize = 256;
 
 #[derive(Debug)]
 // #[derive(Default)]
@@ -15,9 +12,22 @@ pub struct Block {
     data: Vec<u8>,
     prev_block_hash: Sha256Hash,
     hash: Sha256Hash,
+    nonce: u64,
 }
 
 impl Block {
+    pub fn get_header(&self) -> Vec<u8> {
+        let mut data: Vec<u8> = Vec::new();
+        data.extend_from_slice(self.prev_block_hash.as_ref());
+        data.extend_from_slice(self.data.as_ref());
+        data.extend_from_slice(&util::convert_u64_to_u8_array(self.timestamp as u64));
+        data
+    }
+
+    pub fn get_nonce(&self) -> u64 {
+        self.nonce
+    }
+
     pub fn pretty_hash(&self) -> String {
         hex::encode(self.hash)
     }
@@ -33,17 +43,6 @@ impl Block {
     pub fn pretty_prev_hash(&self) -> String {
         hex::encode(self.prev_block_hash)
     }
-    fn hash(&mut self) -> [u8; 32] {
-        let mut vec = Vec::new();
-        vec.extend_from_slice(&self.prev_block_hash);
-        vec.extend_from_slice(&self.data);
-        vec.extend_from_slice(&util::convert_u64_to_u8_array(self.timestamp as u64));
-        let mut hasher = Sha256::new();
-        hasher.input(&vec);
-        let mut hash = Sha256Hash::default();
-        hasher.result(&mut hash);
-        hash
-    }
 
     pub fn new(data: &str, prev_hash: Sha256Hash) -> Self {
         let mut block = Self {
@@ -51,9 +50,11 @@ impl Block {
             data: data.to_owned().into(),
             prev_block_hash: prev_hash,
             hash: Sha256Hash::default(),
+            nonce: 0,
         };
-        let hash = block.hash();
+        let (nonce, hash) = proofofwork::run(&block, proofofwork::DEFAULT_DIFFICULTY);
         block.hash = hash;
+        block.nonce = nonce;
         block
     }
 
